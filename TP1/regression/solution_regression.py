@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VosNoms (Matricule) .~= À MODIFIER =~.
+#   - caiy1401 - CAI, Yunfan
 ###
 
 import numpy as np
@@ -24,8 +24,21 @@ class Regression:
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
         # AJOUTER CODE ICI
-        phi_x = x
+        phi_x = []
+        if np.isscalar(x) :
+            # x est un scalaire
+            for n in range(self.M + 1) :
+                phi_x.append(x ** n)
+            phi_x = np.array(phi_x)
+        else :
+            # x est un vecteur de N scalaires
+            for i in x :
+                phi_x.append([i ** n for n in range(self.M + 1)])
+            phi_x = np.array(phi_x)
+            
         return phi_x
+    
+
 
     def recherche_hyperparametre(self, X, t):
         """
@@ -76,12 +89,21 @@ class Regression:
         NOTE IMPORTANTE : lorsque self.M <= 0, il faut trouver la bonne valeur de self.M
 
         """
-        #AJOUTER CODE ICI
+        
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
 
         phi_x = self.fonction_base_polynomiale(X)
-        self.w = [0, 1]
+        
+        if using_sklearn:
+            # la classe "Ridge"
+            reg = linear_model.Ridge(alpha=self.lamb)
+            reg.fit(phi_x, t)
+            self.w = reg.coef_
+            self.w[0] = reg.intercept_
+        else:
+            # procedure de resolution de systeme d'equations lineaires
+            self.w = np.linalg.solve(self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
 
     def prediction(self, x):
         """
@@ -92,8 +114,9 @@ class Regression:
         a prealablement ete appelee. Elle doit utiliser le champs ``self.w``
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
-        # AJOUTER CODE ICI
-        return 0.5
+
+        phi_x = self.fonction_base_polynomiale(x)
+        return np.dot(self.w.T, phi_x.T)
 
     @staticmethod
     def erreur(t, prediction):
@@ -101,5 +124,5 @@ class Regression:
         Retourne l'erreur de la difference au carre entre
         la cible ``t`` et la prediction ``prediction``.
         """
-        # AJOUTER CODE ICI
-        return 0.0
+        
+        return (prediction - t) ** 2

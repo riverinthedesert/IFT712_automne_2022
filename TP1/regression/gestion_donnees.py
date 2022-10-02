@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VotreNom (VotreMatricule) .~= À MODIFIER =~.
+#   - caiy1401 - CAI, Yunfan
 ###
 
 import numpy as np
