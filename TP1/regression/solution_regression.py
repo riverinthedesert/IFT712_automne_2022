@@ -60,36 +60,36 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        M_max = 11
+        M_max = 10
         k = 10
         shuffled = []
         shuffled_X = []
         shuffled_t = []
-        
+
         for i in range(len(X)):
             shuffled.append([X[i], t[i]])
         random.shuffle(shuffled)
         for i in range(len(X)):
             shuffled_X.append(shuffled[i][0])
             shuffled_t.append(shuffled[i][1])
-    
+
         shuffled_X = np.array(shuffled_X)
         shuffled_t = np.array(shuffled_t)
-        
+
         k_folds_X = np.array_split(shuffled_X, k)
         k_folds_t = np.array_split(shuffled_t, k)
-        
+
         liste_erreur = []
 
-        for e in range(M_max):
-            regression = Regression(self.lamb,e+1)
+        for m in range(1, M_max + 1):
+            regression = Regression(self.lamb, m)
             erreur_moyenne = 0
             for i in range(k):
                 validation_X = k_folds_X[i]
                 validation_t = k_folds_t[i]
                 entrainement_X = None
                 entrainement_t = None
-                
+
                 for j in range(k):
                     if j != i:
                         if entrainement_X is None:
@@ -105,7 +105,8 @@ class Regression:
 
                 for j in range(len(validation_X)):
                     prediction = regression.prediction(validation_X[j])
-                    erreur = erreur + regression.erreur(validation_t[j], prediction)
+                    erreur = erreur + \
+                        regression.erreur(validation_t[j], prediction)
 
                 erreur_moyenne = erreur_moyenne + erreur
             erreur_moyenne = erreur_moyenne/k
