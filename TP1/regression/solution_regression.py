@@ -7,6 +7,8 @@
 import numpy as np
 import random
 from sklearn import linear_model
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
 
 class Regression:
@@ -61,7 +63,40 @@ class Regression:
         t: vecteur de cibles
         """
         # AJOUTER CODE ICI
-        self.M = 1
+        
+        train = pd.DataFrame(X)
+        test = pd.DataFrame(t)
+        
+        best_accu = 1
+        best_params = None
+        score = 0
+        
+        M_choices = [1, 2, 3, 5, 10, 20]
+        nbK = 10
+        
+        for x in range(0, nbK):
+            
+            # split 20% of train et valid data pour la evaluation
+            X_train, X_test, y_train, y_test = train_test_split(train, test,
+                test_size=0.2, shuffle = True, random_state = 8)
+            
+            
+            # # meme pour la validation set
+            # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
+            #     test_size=0.2, random_state= 8)
+            
+            for M_param in M_choices:
+                self.M = M_param
+                self.entrainement(X_train, y_train)
+                prdiction = self.prediction(X_test)
+                score = self.erreur(y_test, prdiction)
+            
+                if score < best_accu:
+                    best_accu = score
+                    best_params = M_param
+            
+        
+        self.M = best_params
 
     def entrainement(self, X, t, using_sklearn=False):
         """
@@ -89,6 +124,9 @@ class Regression:
         NOTE IMPORTANTE : lorsque self.M <= 0, il faut trouver la bonne valeur de self.M
 
         """
+        
+        print(X.shape)
+        print(t.shape)
         
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
