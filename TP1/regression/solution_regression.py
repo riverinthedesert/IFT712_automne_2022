@@ -171,7 +171,7 @@ class Regression:
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
 
-        prediction = np.dot(self.w, self.fonction_base_polynomiale(x))
+        prediction = np.dot(self.w.T, self.fonction_base_polynomiale(x).T)
         return prediction
 
     @staticmethod
