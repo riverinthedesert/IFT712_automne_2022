@@ -24,20 +24,18 @@ class Regression:
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
 
-        phi_x = x
-
-        if np.isscalar(x):
-            phi_x = np.empty(self.M, dtype='double')
-            for i in range(self.M + 1):
-                phi_x[i-1] = (x**i)
-
-        else:
-            n = len(x)
-            phi_x = np.empty((n, self.M), dtype='double')
-            for j in range(n):
-                for i in range(self.M + 1):
-                    phi_x[j][i-1] = (x[j]**i)
-
+        phi_x = []
+        if np.isscalar(x) :
+            # x est un scalaire
+            for n in range(self.M + 1) :
+                phi_x.append(x ** n)
+            phi_x = np.array(phi_x)
+        else :
+            # x est un vecteur de N scalaires
+            for i in x :
+                phi_x.append([i ** n for n in range(self.M + 1)])
+            phi_x = np.array(phi_x)
+            
         return phi_x
 
     def recherche_hyperparametre(self, X, t):
@@ -60,7 +58,7 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        M_max = 10
+        M_max = 11
         k = 10
         shuffled = []
         shuffled_X = []
@@ -151,15 +149,18 @@ class Regression:
         """
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
-
+        
         phi_x = self.fonction_base_polynomiale(X)
+
         if using_sklearn:
-            regression = linear_model.Ridge(alpha=self.lamb)
-            regression.fit(phi_x, t)
-            self.w = regression.coef_
+            # la classe "Ridge"
+            reg = linear_model.Ridge(alpha=self.lamb)
+            reg.fit(phi_x, t)
+            self.w = reg.coef_
+            self.w[0] = reg.intercept_
         else:
-            self.w = np.linalg.solve(
-                self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
+            # procedure de resolution de systeme d'equations lineaires
+            self.w = np.linalg.solve(self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
 
     def prediction(self, x):
         """
@@ -171,8 +172,8 @@ class Regression:
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
 
-        prediction = np.dot(self.w.T, self.fonction_base_polynomiale(x).T)
-        return prediction
+        phi_x = self.fonction_base_polynomiale(x)
+        return np.dot(self.w.T, phi_x.T)
 
     @staticmethod
     def erreur(t, prediction):
