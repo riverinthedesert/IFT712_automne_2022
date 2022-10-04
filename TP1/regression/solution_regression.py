@@ -81,15 +81,14 @@ class Regression:
                 test_size=0.2, shuffle = True, random_state = 8)
             
             
-            # # meme pour la validation set
-            # X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, 
-            #     test_size=0.2, random_state= 8)
+            
+            print(X_train[:1])
             
             for M_param in M_choices:
                 self.M = M_param
-                self.entrainement(X_train, y_train)
-                prdiction = self.prediction(X_test)
-                score = self.erreur(y_test, prdiction)
+                self.entrainement(X_train.to_numpy(), y_train.to_numpy())
+                prdiction = self.prediction(X_test.to_numpy())
+                score = self.erreur(y_test.to_numpy(), prdiction)
             
                 if score < best_accu:
                     best_accu = score
@@ -126,7 +125,9 @@ class Regression:
         """
         
         print(X.shape)
+        print(X)
         print(t.shape)
+        print(t)
         
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
