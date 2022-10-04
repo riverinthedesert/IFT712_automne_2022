@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VosNoms (Matricule) .~= À MODIFIER =~.
+# habib gaye1902
 ###
 
 import numpy as np
 import random
 from sklearn import linear_model
-
 
 class Regression:
     def __init__(self, lamb, m=1):
@@ -24,7 +23,13 @@ class Regression:
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
         # AJOUTER CODE ICI
-        phi_x = x
+        if np.isscalar(x):
+            phi_x=x**np.arange(0,self.M+1)
+        else:
+            N = len(x)
+            phi_x = np.zeros((N, self.M + 1))
+            for i in range(N):
+                phi_x[i] = x[i]**np.arange(0,self.M+1)
         return phi_x
 
     def recherche_hyperparametre(self, X, t):
@@ -48,7 +53,40 @@ class Regression:
         t: vecteur de cibles
         """
         # AJOUTER CODE ICI
-        self.M = 1
+        #definissons une variable qui va contenir l'erreur minimale
+        errMin = 0
+        mErrMin = 0 
+       # qui representera le M dont l erreur est minimale
+       # nous allons faire une boucle Pour chaque m entre le Mmin et le Mmax
+        for mTemp in range(Regression.min_, Regression.max_ +1):
+
+           ErrSum = 0 
+           self.M = mTemp
+           #on entraine le modèle k fois avec une répartition des données différentes
+           for k in range(1, 11):
+               
+               self.w = None
+
+               X_train, X_test, y_train, y_test = train_test_split(X, t, test_size=Regression.DTEST)
+               # On entraine le modèle sur les données (DTRAIN)
+               self.entrainement(X_train, y_train)
+               # prédiction sur les données restantes
+               prediction = np.array([self.prediction(x) for x in X_test])
+               # nous allons calculer l'erreur
+               Erreur = np.array([self.Erreur(t_n, p_n)
+                                  for t_n, p_n in zip(y_test, prediction)])
+               ErrSum += Erreur.mean() 
+
+           # Si c'est la première boucle on met à jour l'erreur min et le M correspondant
+           if mTemp == Regression.min_:
+               mErrMin = Regression.min
+               errMin = ErrSum
+           # Sinon si la nouvelle erreur est plus basse que l'erreur minimale on garde le nouveau m
+           elif ErrSum < errMin:
+               errMin = ErrSum
+               self.M =mTemp
+        self.M = mErrMin
+           
 
     def entrainement(self, X, t, using_sklearn=False):
         """
@@ -78,10 +116,18 @@ class Regression:
         """
         #AJOUTER CODE ICI
         if self.M <= 0:
-            self.recherche_hyperparametre(X, t)
+           self.recherche_hyperparametre(X, t)
 
-        phi_x = self.fonction_base_polynomiale(X)
-        self.w = [0, 1]
+        phi_x =self.fonction_base_polynomiale(X)
+        if using_sklearn:
+           reg = linear_model.Ridge(alpha=self.lamb)
+           reg.fit(phi_x, t)
+           self.w =reg.coef_
+           self.w[0]=reg.intercept_
+        else:
+           a = self.lamb * np.identity(self.M+1) + np.transpose(phi_x) @ phi_x
+           b = np.transpose(phi_x) @ t
+           self.w = np.linalg.solve(a, b)
 
     def prediction(self, x):
         """
@@ -93,7 +139,10 @@ class Regression:
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
         # AJOUTER CODE ICI
-        return 0.5
+        phi_x = self.fonction_base_polynomiale(x)
+        print(len(self.w))
+        return np.dot(self.w.T,phi_x.T)
+    
 
     @staticmethod
     def erreur(t, prediction):
@@ -102,4 +151,4 @@ class Regression:
         la cible ``t`` et la prediction ``prediction``.
         """
         # AJOUTER CODE ICI
-        return 0.0
+        return (t-prediction)**2
