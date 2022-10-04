@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VosNoms (Matricule) .~= À MODIFIER =~.
+# Yoann AIT ICHOU (Matricule)
 ###
 
 import numpy as np
@@ -23,8 +23,21 @@ class Regression:
 
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
-        # AJOUTER CODE ICI
+
         phi_x = x
+
+        if np.isscalar(x):
+            phi_x = np.empty(self.M, dtype='double')
+            for i in range(self.M + 1):
+                phi_x[i-1] = (x**i)
+
+        else:
+            n = len(x)
+            phi_x = np.empty((n, self.M), dtype='double')
+            for j in range(n):
+                for i in range(self.M + 1):
+                    phi_x[j][i-1] = (x[j]**i)
+
         return phi_x
 
     def recherche_hyperparametre(self, X, t):
@@ -47,8 +60,67 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        # AJOUTER CODE ICI
-        self.M = 1
+        M_max = 11
+        k = 10
+        shuffled = []
+        shuffled_X = []
+        shuffled_t = []
+        
+        for i in range(len(X)):
+            shuffled.append([X[i], t[i]])
+        random.shuffle(shuffled)
+        for i in range(len(X)):
+            shuffled_X.append(shuffled[i][0])
+            shuffled_t.append(shuffled[i][1])
+    
+        shuffled_X = np.array(shuffled_X)
+        shuffled_t = np.array(shuffled_t)
+        
+        k_folds_X = np.array_split(shuffled_X, k)
+        k_folds_t = np.array_split(shuffled_t, k)
+        
+        liste_erreur = []
+
+        for e in range(M_max):
+            regression = Regression(self.lamb,e+1)
+            erreur_moyenne = 0
+            for i in range(k):
+                validation_X = k_folds_X[i]
+                validation_t = k_folds_t[i]
+                entrainement_X = None
+                entrainement_t = None
+                
+                for j in range(k):
+                    if j != i:
+                        if entrainement_X is None:
+                            entrainement_X = k_folds_X[j]
+                            entrainement_t = k_folds_t[j]
+                        else:
+                            entrainement_X = np.concatenate(
+                                (entrainement_X, k_folds_X[j]))
+                            entrainement_t = np.concatenate(
+                                (entrainement_t, k_folds_t[j]))
+                regression.entrainement(entrainement_X, entrainement_t)
+                erreur = 0
+
+                for j in range(len(validation_X)):
+                    prediction = regression.prediction(validation_X[j])
+                    erreur = erreur + regression.erreur(validation_t[j], prediction)
+
+                erreur_moyenne = erreur_moyenne + erreur
+            erreur_moyenne = erreur_moyenne/k
+            liste_erreur.append(erreur_moyenne)
+
+        erreur_min = liste_erreur[0]
+        indice_erreur_min = 0
+
+        for i in range(len(liste_erreur)):
+            if(liste_erreur[i] < erreur_min):
+                erreur_min = liste_erreur[i]
+                indice_erreur_min = i
+
+        self.M = indice_erreur_min + 1
+        print("L'hyperparamètre retenu est M = "+str(self.M))
 
     def entrainement(self, X, t, using_sklearn=False):
         """
@@ -61,10 +133,10 @@ class Regression:
         Cette methode doit assigner le champs ``self.w`` au vecteur
         (tableau Numpy 1D) de taille D+1, tel que specifie à la section 3.1.4
         du livre de Bishop.
-        
+
         Lorsque using_sklearn=True, vous devez utiliser la classe "Ridge" de 
         la librairie sklearn (voir http://scikit-learn.org/stable/modules/linear_model.html)
-        
+
         Lorsque using_sklearn=Fasle, vous devez implementer l'equation 3.28 du
         livre de Bishop. Il est suggere que le calcul de ``self.w`` n'utilise
         pas d'inversion de matrice, mais utilise plutôt une procedure
@@ -76,12 +148,17 @@ class Regression:
         NOTE IMPORTANTE : lorsque self.M <= 0, il faut trouver la bonne valeur de self.M
 
         """
-        #AJOUTER CODE ICI
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
 
         phi_x = self.fonction_base_polynomiale(X)
-        self.w = [0, 1]
+        if using_sklearn:
+            regression = linear_model.Ridge(alpha=self.lamb)
+            regression.fit(phi_x, t)
+            self.w = regression.coef_
+        else:
+            self.w = np.linalg.solve(
+                self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
 
     def prediction(self, x):
         """
@@ -92,8 +169,9 @@ class Regression:
         a prealablement ete appelee. Elle doit utiliser le champs ``self.w``
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
-        # AJOUTER CODE ICI
-        return 0.5
+
+        prediction = np.dot(self.w, self.fonction_base_polynomiale(x))
+        return prediction
 
     @staticmethod
     def erreur(t, prediction):
@@ -101,5 +179,4 @@ class Regression:
         Retourne l'erreur de la difference au carre entre
         la cible ``t`` et la prediction ``prediction``.
         """
-        # AJOUTER CODE ICI
-        return 0.0
+        return (prediction - t) ** 2
