@@ -25,17 +25,17 @@ class Regression:
         """
 
         phi_x = []
-        if np.isscalar(x) :
+        if np.isscalar(x):
             # x est un scalaire
-            for n in range(self.M + 1) :
+            for n in range(self.M + 1):
                 phi_x.append(x ** n)
             phi_x = np.array(phi_x)
-        else :
+        else:
             # x est un vecteur de N scalaires
-            for i in x :
+            for i in x:
                 phi_x.append([i ** n for n in range(self.M + 1)])
             phi_x = np.array(phi_x)
-            
+
         return phi_x
 
     def recherche_hyperparametre(self, X, t):
@@ -149,7 +149,7 @@ class Regression:
         """
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
-        
+
         phi_x = self.fonction_base_polynomiale(X)
 
         if using_sklearn:
@@ -160,7 +160,8 @@ class Regression:
             self.w[0] = reg.intercept_
         else:
             # procedure de resolution de systeme d'equations lineaires
-            self.w = np.linalg.solve(self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
+            self.w = np.linalg.solve(
+                self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
 
     def prediction(self, x):
         """
