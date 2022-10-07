@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VosNoms (Matricule) .~= À MODIFIER =~.
+# - caiy2401 - CAI, Yunfan
+# - gaye1902 - ElHadji Habib Gaye
+# - aity1101 - AIT ICHOU, Yoann
 ###
 
 import numpy as np
@@ -23,22 +25,29 @@ class Regression:
 
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
-        # AJOUTER CODE ICI
-        phi_x = x
+
+        phi_x = []
+        if np.isscalar(x):
+            # x est un scalaire
+            for n in range(self.M + 1):
+                phi_x.append(x ** n)
+            phi_x = np.array(phi_x)
+        else:
+            # x est un vecteur de N scalaires
+            for i in x:
+                phi_x.append([i ** n for n in range(self.M + 1)])
+            phi_x = np.array(phi_x)
+
         return phi_x
 
     def recherche_hyperparametre(self, X, t):
         """
         Trouver la meilleure valeur pour l'hyper-parametre self.M (pour un lambda fixe donné en entrée).
 
-        Option 1
         Validation croisée de type "k-fold" avec k=10. La méthode array_split de numpy peut être utlisée 
         pour diviser les données en "k" parties. Si le nombre de données en entrée N est plus petit que "k", 
         k devient égal à N. Il est important de mélanger les données ("shuffle") avant de les sous-diviser
         en "k" parties.
-
-        Option 2
-        Sous-échantillonage aléatoire avec ratio 80:20 pour Dtrain et Dvalid, avec un nombre de répétition k=10.
 
         Note: 
 
@@ -47,8 +56,75 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        # AJOUTER CODE ICI
-        self.M = 1
+        M_max = 50
+        k = 10
+        shuffled = []
+        shuffled_X = []
+        shuffled_t = []
+
+        for i in range(len(X)):
+            #Association des étiquettes avec sa donnée x associée
+            shuffled.append([X[i], t[i]])
+        random.shuffle(shuffled)
+        for i in range(len(X)):
+            shuffled_X.append(shuffled[i][0])
+            shuffled_t.append(shuffled[i][1])
+
+        shuffled_X = np.array(shuffled_X)
+        shuffled_t = np.array(shuffled_t)
+        
+        #Séparation des données en k-plis
+        k_folds_X = np.array_split(shuffled_X, k)
+        k_folds_t = np.array_split(shuffled_t, k)
+
+        liste_erreur = []
+
+        for m in range(1, M_max + 1):
+            regression = Regression(self.lamb, m)
+            erreur_moyenne = 0
+            for i in range(k):
+                #Association du pli de validation 
+                validation_X = k_folds_X[i]
+                validation_t = k_folds_t[i]
+                entrainement_X = None
+                entrainement_t = None
+
+                for j in range(k):
+                    #concaténation des k-1 plis du jeu d'entrainement
+                    if j != i:
+                        if entrainement_X is None:
+                            entrainement_X = k_folds_X[j]
+                            entrainement_t = k_folds_t[j]
+                        else:
+                            entrainement_X = np.concatenate(
+                                (entrainement_X, k_folds_X[j]))
+                            entrainement_t = np.concatenate(
+                                (entrainement_t, k_folds_t[j]))
+                #entrainement du modèle à partir des k-1 plis d'entrainement
+                regression.entrainement(entrainement_X, entrainement_t)
+                erreur = 0
+
+                for j in range(len(validation_X)):
+                    #validation du modèle sur le pli de validation
+                    prediction = regression.prediction(validation_X[j])
+                    erreur = erreur + \
+                        regression.erreur(validation_t[j], prediction)
+
+                erreur_moyenne = erreur_moyenne + erreur
+            erreur_moyenne = erreur_moyenne/k
+            liste_erreur.append(erreur_moyenne)
+
+        erreur_min = liste_erreur[0]
+        indice_erreur_min = 0
+
+        for i in range(len(liste_erreur)):
+            #Récupération de l'indice de la liste associé à l'erreur minimum
+            if(liste_erreur[i] < erreur_min):
+                erreur_min = liste_erreur[i]
+                indice_erreur_min = i
+                
+        self.M = indice_erreur_min + 1
+        print("L'hyperparamètre retenu est M = "+str(self.M))
 
     def entrainement(self, X, t, using_sklearn=False):
         """
@@ -61,11 +137,11 @@ class Regression:
         Cette methode doit assigner le champs ``self.w`` au vecteur
         (tableau Numpy 1D) de taille D+1, tel que specifie à la section 3.1.4
         du livre de Bishop.
-        
+
         Lorsque using_sklearn=True, vous devez utiliser la classe "Ridge" de 
         la librairie sklearn (voir http://scikit-learn.org/stable/modules/linear_model.html)
-        
-        Lorsque using_sklearn=Fasle, vous devez implementer l'equation 3.28 du
+
+        Lorsque using_sklearn=False, vous devez implementer l'equation 3.28 du
         livre de Bishop. Il est suggere que le calcul de ``self.w`` n'utilise
         pas d'inversion de matrice, mais utilise plutôt une procedure
         de resolution de systeme d'equations lineaires (voir np.linalg.solve).
@@ -76,12 +152,21 @@ class Regression:
         NOTE IMPORTANTE : lorsque self.M <= 0, il faut trouver la bonne valeur de self.M
 
         """
-        #AJOUTER CODE ICI
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
 
         phi_x = self.fonction_base_polynomiale(X)
-        self.w = [0, 1]
+
+        if using_sklearn:
+            # régression "Ridge"
+            reg = linear_model.Ridge(alpha=self.lamb)
+            reg.fit(phi_x, t)
+            self.w = reg.coef_
+            self.w[0] = reg.intercept_
+        else:
+            # procedure de resolution de systeme d'equations lineaires
+            self.w = np.linalg.solve(
+                self.lamb * np.identity(len(phi_x.T)) + phi_x.T.dot(phi_x), phi_x.T.dot(t))
 
     def prediction(self, x):
         """
@@ -92,8 +177,9 @@ class Regression:
         a prealablement ete appelee. Elle doit utiliser le champs ``self.w``
         afin de calculer la prediction y(x,w) (equation 3.1 et 3.3).
         """
-        # AJOUTER CODE ICI
-        return 0.5
+
+        phi_x = self.fonction_base_polynomiale(x)
+        return np.dot(self.w.T, phi_x.T)
 
     @staticmethod
     def erreur(t, prediction):
@@ -101,5 +187,4 @@ class Regression:
         Retourne l'erreur de la difference au carre entre
         la cible ``t`` et la prediction ``prediction``.
         """
-        # AJOUTER CODE ICI
-        return 0.0
+        return (prediction - t) ** 2
