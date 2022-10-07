@@ -54,7 +54,7 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        M_max = 11
+        M_max = 50
         k = 10
         shuffled = []
         shuffled_X = []
