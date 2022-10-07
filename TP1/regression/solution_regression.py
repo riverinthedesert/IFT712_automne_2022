@@ -25,7 +25,7 @@ class Regression:
 
         NOTE : En mettant phi_x = x, on a une fonction de base lineaire qui fonctionne pour une regression lineaire
         """
-        # AJOUTER CODE ICI
+
         phi_x = []
         if np.isscalar(x) :
             # x est un scalaire
@@ -62,7 +62,6 @@ class Regression:
         X: vecteur de donnees
         t: vecteur de cibles
         """
-        # AJOUTER CODE ICI
         
         train = pd.DataFrame(X)
         test = pd.DataFrame(t)
@@ -71,27 +70,27 @@ class Regression:
         best_params = None
         score = 0
         
+        # possibilite de valeur M
         M_choices = [1, 2, 3, 5, 10, 20]
+        # nombre de repetition pour recherche hyperparam
         nbK = 10
         
         for x in range(0, nbK):
             
             # split 20% of train et valid data pour la evaluation
-            X_train, X_test, y_train, y_test = train_test_split(train, test,
+            X_train, X_valid, y_train, y_valid = train_test_split(train, test,
                 test_size=0.2, shuffle = True, random_state = 8)
             
             
-            
-            print(X_train[:1])
-            
             for M_param in M_choices:
                 self.M = M_param
-                self.entrainement(X_train.to_numpy(), y_train.to_numpy())
-                prdiction = self.prediction(X_test.to_numpy())
-                score = self.erreur(y_test.to_numpy(), prdiction)
+                self.entrainement(X_train[0].values.tolist(), y_train[0].values.tolist())
+                prdiction = self.prediction(X_valid[0].values.tolist())
+                score = self.erreur(y_valid[0].values.tolist(), prdiction)
             
-                if score < best_accu:
-                    best_accu = score
+                # comparer pour trouver le meilleur score
+                if score.mean() < best_accu:
+                    best_accu = score.mean()
                     best_params = M_param
             
         
@@ -124,10 +123,6 @@ class Regression:
 
         """
         
-        print(X.shape)
-        print(X)
-        print(t.shape)
-        print(t)
         
         if self.M <= 0:
             self.recherche_hyperparametre(X, t)
