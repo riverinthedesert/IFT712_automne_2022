@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+#####
+# - caiy2401 - CAI, Yunfan
+# - gaye1902 - ElHadji Habib Gaye
+# - aity1101 - AIT ICHOU, Yoann
+###
+
 import numpy as np
 import sys
 import solution_regression as sr
