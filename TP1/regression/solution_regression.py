@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #####
-# Yoann AIT ICHOU (Matricule)
+# AIT ICHOU Yoann, CAI Yunfan, GAYE Habib (Matricule)
 ###
 
 import numpy as np
@@ -42,14 +42,10 @@ class Regression:
         """
         Trouver la meilleure valeur pour l'hyper-parametre self.M (pour un lambda fixe donné en entrée).
 
-        Option 1
         Validation croisée de type "k-fold" avec k=10. La méthode array_split de numpy peut être utlisée 
         pour diviser les données en "k" parties. Si le nombre de données en entrée N est plus petit que "k", 
         k devient égal à N. Il est important de mélanger les données ("shuffle") avant de les sous-diviser
         en "k" parties.
-
-        Option 2
-        Sous-échantillonage aléatoire avec ratio 80:20 pour Dtrain et Dvalid, avec un nombre de répétition k=10.
 
         Note: 
 
@@ -65,6 +61,7 @@ class Regression:
         shuffled_t = []
 
         for i in range(len(X)):
+            #Association des étiquettes avec sa donnée x associée
             shuffled.append([X[i], t[i]])
         random.shuffle(shuffled)
         for i in range(len(X)):
@@ -73,7 +70,8 @@ class Regression:
 
         shuffled_X = np.array(shuffled_X)
         shuffled_t = np.array(shuffled_t)
-
+        
+        #Séparation des données en k-plis
         k_folds_X = np.array_split(shuffled_X, k)
         k_folds_t = np.array_split(shuffled_t, k)
 
@@ -83,12 +81,14 @@ class Regression:
             regression = Regression(self.lamb, m)
             erreur_moyenne = 0
             for i in range(k):
+                #Association du pli de validation 
                 validation_X = k_folds_X[i]
                 validation_t = k_folds_t[i]
                 entrainement_X = None
                 entrainement_t = None
 
                 for j in range(k):
+                    #concaténation des k-1 plis du jeu d'entrainement
                     if j != i:
                         if entrainement_X is None:
                             entrainement_X = k_folds_X[j]
@@ -98,10 +98,12 @@ class Regression:
                                 (entrainement_X, k_folds_X[j]))
                             entrainement_t = np.concatenate(
                                 (entrainement_t, k_folds_t[j]))
+                #entrainement du modèle à partir des k-1 plis d'entrainement
                 regression.entrainement(entrainement_X, entrainement_t)
                 erreur = 0
 
                 for j in range(len(validation_X)):
+                    #validation du modèle sur le pli de validation
                     prediction = regression.prediction(validation_X[j])
                     erreur = erreur + \
                         regression.erreur(validation_t[j], prediction)
@@ -114,10 +116,11 @@ class Regression:
         indice_erreur_min = 0
 
         for i in range(len(liste_erreur)):
+            #Récupération de l'indice de la liste associé à l'erreur minimum
             if(liste_erreur[i] < erreur_min):
                 erreur_min = liste_erreur[i]
                 indice_erreur_min = i
-
+                
         self.M = indice_erreur_min + 1
         print("L'hyperparamètre retenu est M = "+str(self.M))
 
@@ -136,7 +139,7 @@ class Regression:
         Lorsque using_sklearn=True, vous devez utiliser la classe "Ridge" de 
         la librairie sklearn (voir http://scikit-learn.org/stable/modules/linear_model.html)
 
-        Lorsque using_sklearn=Fasle, vous devez implementer l'equation 3.28 du
+        Lorsque using_sklearn=False, vous devez implementer l'equation 3.28 du
         livre de Bishop. Il est suggere que le calcul de ``self.w`` n'utilise
         pas d'inversion de matrice, mais utilise plutôt une procedure
         de resolution de systeme d'equations lineaires (voir np.linalg.solve).
@@ -153,7 +156,7 @@ class Regression:
         phi_x = self.fonction_base_polynomiale(X)
 
         if using_sklearn:
-            # la classe "Ridge"
+            # régression "Ridge"
             reg = linear_model.Ridge(alpha=self.lamb)
             reg.fit(phi_x, t)
             self.w = reg.coef_
