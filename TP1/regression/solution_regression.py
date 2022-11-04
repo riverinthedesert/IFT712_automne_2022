@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-#####
-#   - caiy1401 - CAI, Yunfan
-###
+####
+  # - caiy2401 - CAI, Yunfan
+  # - gaye1902 - ElHadji Habib Gaye
+  # - aity1101 - Yoann Ait Ichou
+####
 
 import numpy as np
 import random
