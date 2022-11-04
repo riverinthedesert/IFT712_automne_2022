@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 #####
-# Vos Noms (VosMatricules) .~= À MODIFIER =~.
+#Cai Yunfan CIP: caiy2401
+#Yoann Ait Ichou CIP : aity1101
+#ElHadji Habib Gaye CIP : gaye1601
 ####
 
 import numpy as np
@@ -66,25 +68,18 @@ class ClassifieurLineaire:
             print('Classification generative')
             """
                 La classification générative ne marche pas quand il y a des points aberrants.
-            """
-            N1 = (t_train == 1).sum()
-            N2 = (t_train == 0).sum()
-            p = N1 / (N1 + N2)
-
-            x1_train = x_train[t_train == 1]
-            x2_train = x_train[t_train == 0]
-
-            ## Formules du livre de Bishop
-            # mu_1 = (1/N1)*np.sum(t_train.dot(x_train), axis=0)
-            # mu_2 = (1/N2)*np.sum((1-t_train).dot(x_train), axis=0)
-            # S1 = (1 / N1) * (x1_train - mu_1).T.dot((x1_train - mu_1))
-            # S2 = (1 / N2) * (x2_train - mu_2).T.dot((x2_train - mu_2))
-            # sigma = (N1 / (N1 + N2) * S1) + (N2 / (N1 + N2) * S2)
-
-            ## Utilisation des fonctions de numpy
-            mu_1 = np.mean(x1_train, axis=0)
-            mu_2 = np.mean(x2_train, axis=0)
-            sigma = np.cov(x_train.T)
+            """ 
+            N = len(t_train)
+            N1 = np.sum(t_train)
+            N2 = N - N1
+            p = N1 / N
+            C1_indexs = np.where(t_train == 1)[0]
+            C2_indexs = np.where(t_train == 0)[0]
+            mu_1 = np.array([np.mean(x_train[C1_indexs, 0]), np.mean(x_train[C1_indexs, 1])])
+            mu_2 = np.array([np.mean(x_train[C2_indexs, 0]), np.mean(x_train[C2_indexs, 1])])
+            S1 = np.cov(x_train[C1_indexs].T)
+            S2 = np.cov(x_train[C2_indexs].T)
+            sigma = (N1 * S1 + N2 * S2) / N
             sigma = sigma + (np.identity(len(sigma)) * self.lamb)
 
             sigma_inv = np.linalg.inv(sigma)
@@ -108,9 +103,13 @@ class ClassifieurLineaire:
                     if (t_train[n] <= 0):
                         tn = -1
                     if (self.erreur(t_train[n], self.prediction(x_train[n]))):
-                        self.w_0 = self.w_0 + learning_rate * tn * 1
+                        self.w_0 = self.w_0 + learning_rate * tn
                         self.w = self.w + learning_rate * tn * x_train[n]
-
+                        
+                predictions_entrainement  = np.array([self.prediction(x) for x in x_train])
+                err = 100 * np.sum(np.abs(predictions_entrainement - t_train)) / len(t_train)
+                if(err ==0):
+                    break        
                 k += 1
 
         else:  # Perceptron + SGD [sklearn] + learning rate = 0.001 + penalty 'l2' voir http://scikit-learn.org/
@@ -133,8 +132,7 @@ class ClassifieurLineaire:
         a préalablement été appelée. Elle doit utiliser les champs ``self.w``
         et ``self.w_0`` afin de faire cette classification.
         """
-        wT = self.w.T
-        y = self.w_0 + np.dot(wT, x)
+        y = self.w_0 + np.dot(self.w.T, x)
         if y >= 0:
             return 1
         else:

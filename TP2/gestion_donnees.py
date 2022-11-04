@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 #####
-# VotreNom (VotreMatricule) .~= À MODIFIER =~.
+#Cai Yunfan CIP: caiy2401
+#Yoann Ait Ichou CIP : aity1101
+#ElHadji Habib Gaye CIP : gaye1601
 ###
 
 import numpy as np
