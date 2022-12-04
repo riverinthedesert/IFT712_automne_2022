@@ -125,7 +125,7 @@ class LinearClassifier(object):
             if self.predict(np.array([X[index]]))[0] == y[index]:
                 accu =  accu + 1
             x_augmented = augment(X[index])
-            loss = loss + self.cross_entropy_loss(x_augmented,y[index])[0]
+            loss = loss + self.cross_entropy_loss(x_augmented,y[index],reg)[0]
 
         accu = accu / length_labels
         loss = loss / length_labels
