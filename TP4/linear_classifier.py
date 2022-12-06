@@ -89,12 +89,14 @@ class LinearClassifier(object):
         """
         len_X = X.shape[0]
         class_label = np.zeros(len_X)
+        
         #############################################################################
         # TODO: Return the best class label.                                        #
         #############################################################################
-        x_augmented = augment(X)
+        if self.bias:
+            X = augment(X)
 
-        class_label = np.array([np.argmax(np.dot(np.transpose(self.W),x)) for x in x_augmented])
+        class_label = np.array([np.argmax(np.dot(np.transpose(self.W),x)) for x in X])
 
         #############################################################################
         #                          END OF YOUR CODE                                 #
@@ -124,8 +126,10 @@ class LinearClassifier(object):
 
             if self.predict(np.array([X[index]]))[0] == y[index]:
                 accu =  accu + 1
-            x_augmented = augment(X[index])
-            loss = loss + self.cross_entropy_loss(x_augmented,y[index],reg)[0]
+            x_temp = X[index]
+            if self.bias:
+                x_temp = augment(x_temp)
+            loss = loss + self.cross_entropy_loss(x_temp,y[index],reg)[0]
 
         accu = accu / length_labels
         loss = loss / length_labels
