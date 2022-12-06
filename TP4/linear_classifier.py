@@ -167,30 +167,22 @@ class LinearClassifier(object):
         # 3- Dont forget the regularization!                                        #
         # 4- Compute gradient => eq.(4.109)                                         #
         #############################################################################
-        D = len(self.W)
-        softmax = np.zeros(self.num_classes)
-        sum = 0
-        for index in range(D):
-            for j in range(self.num_classes):
-                softmax[j] = softmax[j] + self.W[index][j]*x[index]
+        # Compute softmax
+        C = self.num_classes
 
-        for j in range(self.num_classes):
-                softmax[j] = np.exp(softmax[j])
-                sum = sum + softmax[j]
+        t = np.zeros((1, C))
+        for i in range(len(t)):
+            C_i = y
+            t[i][C_i] = 1
+        a = np.dot(x, self.W)
+        a = np.exp(a)
+        a /= np.sum(a)
 
-        for j in range(self.num_classes):
-                softmax[j] = softmax[j]/sum
+        # Compute cross-entropy loss
+        loss = (-t * np.log(a)).sum() + (reg/2 * np.linalg.norm(self.W)**2)
 
-
-        cross_entropy_loss = - np.log(softmax[y])
-        regularization = reg/2*(np.linalg.norm(self.W)**2)
-
-        loss = cross_entropy_loss + regularization
-
-        for j in range(self.num_classes):
-            for index in range(D):
-                dW[index][j] = (softmax[j] - int(y == j))*x[index] + reg * self.W[index][j]
-
+        # Compute gradient
+        dW = (x[np.newaxis].T).dot(a - t) + reg * self.W
         #############################################################################
         #                          END OF YOUR CODE                                 #
         #############################################################################

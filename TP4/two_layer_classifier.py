@@ -101,9 +101,11 @@ class TwoLayerClassifier(object):
             #############################################################################
 
             class_label = np.zeros(x.shape[0])
+            
             for index in range(x.shape[0]):
                 scores = self.net.forward(x[index])
                 class_label[index] = np.array(np.argmax(scores))
+                
             return class_label
             #############################################################################
             #                          END OF YOUR CODE                                 #
@@ -132,11 +134,14 @@ class TwoLayerClassifier(object):
         length_labels = len(y)
 
         for index in range(length_labels):
+
             scores = self.net.forward(x[index])
             l = self.net.cross_entropy_loss(scores,y[index])[0]
             loss = loss + l
+
             if self.predict(np.array([x[index]]))[0] == y[index]:
                 accu =  accu + 1
+
         accu = accu / length_labels
         loss = loss / length_labels
         #############################################################################
@@ -233,25 +238,24 @@ class TwoLayerNet(object):
         # 3- Dont forget the regularization!                                        #
         # 4- Compute gradient with respect to the score => eq.(4.109) with phi_n=1  #
         #############################################################################
-        D = len(scores)
-        softmax = np.zeros(D)
-        sum = 0
-
-        for j in range(D):
-            softmax[j] = np.exp(scores[j])
         
-        sum = np.sum(softmax)
+        # Compute softmax
+        softmax = np.exp(scores)
+        somme = np.sum(softmax)
+        softmax = softmax/somme
+        
+        # Initialize one-hot vector for labels
+        t = np.zeros(self.num_classes)
+        t[y] = 1
 
-        for j in range(D):
-            softmax[j] = softmax[j]/sum
-
+        # Compute loss
         cross_entropy_loss = - np.log(softmax[y])
         regularization = self.l2_reg/2*(np.linalg.norm(self.layer2.W)**2)
-
         loss = cross_entropy_loss + regularization
 
-        for index in range(D):
-            dloss_dscores[index] = (softmax[index] - int(y == index))
+        # Compute gradient with respect to the score
+        dloss_dscores = softmax - t
+
         #############################################################################
         #                          END OF YOUR CODE                                 #
         #############################################################################
@@ -301,8 +305,10 @@ class DenseLayer(object):
         #############################################################################
 
         f = np.dot(np.transpose(self.W),x)
+
         if self.activation == 'sigmoid':
-            f = 1/(1+np.exp(-f))
+            f = sigmoid(f)
+
         elif self.activation == 'relu':
             f = np.maximum(0,f)
 
